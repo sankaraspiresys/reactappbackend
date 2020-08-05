@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: samplenodeapp-deployment
+spec:
+  selector:
+    matchLabels:
+      app: samplenodeapp
+      type: api
+  replicas: 1 
+  template:
+    metadata:
+      labels:
+        app: samplenodeapp
+        type: api
+    spec:
+      containers:
+      - name: samplenodeapp-container
+        image: sankardockerdev/node-web-app
+        ports:
+        - containerPort: 3000
+        env:
+            - name: MONGO_URL
+              value: mongodb://mongo:27017/dev
+        imagePullPolicy: Always
