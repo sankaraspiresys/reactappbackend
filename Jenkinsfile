@@ -6,19 +6,19 @@ pipeline {
   }
   agent any
   stages {
-    stage('Compile') {
+    stage('Pull Backend Code From GitHub') {
       steps {
-        git 'https://github.com/sankaraspiresys/restapinode.git'
+        git 'https://github.com/sankaraspiresys/reactappbackend.git'
       }
     }
-    stage('Building Docker Image') {
+    stage('Building Docker Image for Backend') {
       steps{
         script {
           dockerImage = docker.build registry + ":$BUILD_NUMBER"
         }
       }
     }
-    stage('Push Image To Docker Hub') {
+    stage('Push Image To Docker Hub for Backend') {
       steps{
         script {
           /* Finally, we'll push the image with two tags:
@@ -26,16 +26,9 @@ pipeline {
                    * Second, the 'latest' tag.
                    * Pushing multiple tags is cheap, as all the layers are reused. */
           docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-              dockerImage.push("${env.BUILD_NUMBER}")
+             // dockerImage.push("${env.BUILD_NUMBER}")
               dockerImage.push("latest")
           }
-        }
-      }
-    }
-    stage('Deploy App') {
-      steps {
-        script {
-          kubernetesDeploy(configs: "deployment.yml", kubeconfigId: "MyKubernetesConfig")
         }
       }
     }
