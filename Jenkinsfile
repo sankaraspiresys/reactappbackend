@@ -1,36 +1,38 @@
 pipeline {
-  environment {
-    registry = "sankardockerdev/node-web-app"
-    registryCredential = 'docker-hub-credentials'
-    dockerImage = ''
-  }
   agent any
-  stages {
-    stage('Pull Backend Code From GitHub') {
-      steps {
-        git 'https://github.com/sankaraspiresys/reactappbackend.git'
-      }
-    }
-    stage('Building Docker Image for Backend') {
-      steps{
-        script {
-          dockerImage = docker.build registry + ":$BUILD_NUMBER"
-        }
-      }
-    }
-    stage('Push Image To Docker Hub for Backend') {
-      steps{
-        script {
-          /* Finally, we'll push the image with two tags:
-                   * First, the incremental build number from Jenkins
-                   * Second, the 'latest' tag.
-                   * Pushing multiple tags is cheap, as all the layers are reused. */
-          docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-             // dockerImage.push("${env.BUILD_NUMBER}")
-              dockerImage.push("latest")
-          }
-        }
-      }
-    }
+  environment {
+      PROJECT_ID = 'snappy-surf-285008'
+      CLUSTER_NAME = 'cluster-1'
+      LOCATION = 'us-central1-c'
+      CREDENTIALS_ID = 'gke'
   }
+  stages {
+    stage("Checkout code") {
+      steps {
+          checkout scm
+      }
+    }
+    stage("Build image") {
+      steps {
+          script {
+              myapp = docker.build("sankardockerdev/node-web-app")
+          }
+      }
+    }
+    stage("Push image") {
+      steps {
+          script {
+              docker.withRegistry('https://registry.hub.docker.com', 'dockerhub') {
+                      myapp.push("latest")
+              }
+          }
+      }
+    }
+    stage('Deploy to GKE') {
+      steps{
+          sh "sed -i 's/node-web-app:latest/node-web-app/g' deployment.yaml"
+          step([$class: 'KubernetesEngineBuilder', projectId: env.PROJECT_ID, clusterName: env.CLUSTER_NAME, location: env.LOCATION, manifestPattern: 'deployment.yaml', credentialsId: env.CREDENTIALS_ID, verifyDeployments: true])
+      }
+    }
+  }    
 }
