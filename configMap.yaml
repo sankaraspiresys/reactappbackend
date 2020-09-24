@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: service-url
+data:
+  NAME: api-url
+  URL: http://34.68.238.208:3000/
